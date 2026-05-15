@@ -1,0 +1,8 @@
+{
+  "name": "AyiahMind",
+  "description": "Unlock infinite cognitive potential with AyiahMind, powered by the Dior Precision Analytical Deep Engine. An elite AI-driven ecosystem designed for the modern intellectual elite.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
