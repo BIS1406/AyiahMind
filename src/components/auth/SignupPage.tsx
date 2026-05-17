@@ -5,6 +5,7 @@ import { auth, googleProvider, db } from '../../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { Mail, Lock, User, UserPlus, Chrome, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleFirestoreError, OperationType } from '../../lib/firestoreUtils';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -25,15 +26,22 @@ export default function SignupPage() {
       await updateProfile(user, { displayName: name });
       
       // Save initial user profile to Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: name,
-        photoURL: null,
-        tier: 'free',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+      const userPath = `users/${user.uid}`;
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          uid: user.uid,
+          email: user.email,
+          displayName: name,
+          photoURL: null,
+          tier: 'free',
+          studyStreak: 0,
+          quizAverage: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.CREATE, userPath);
+      }
 
       navigate('/');
     } catch (err: any) {
@@ -46,23 +54,29 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     setError('');
     console.log("Starting Google Signup...");
+    const userPath = `users/unknown`;
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       console.log("Google Auth Success:", user.email);
       
       // Save/Update user profile
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        tier: 'free',
-        studyStreak: 0,
-        quizAverage: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+      const signupUserPath = `users/${user.uid}`;
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          tier: 'free',
+          studyStreak: 0,
+          quizAverage: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, signupUserPath);
+      }
 
       navigate('/');
     } catch (err: any) {

@@ -123,7 +123,9 @@ export default function FileUploadModal({ isOpen, onClose }: FileUploadModalProp
           concepts: analysis.concepts || [],
           questions: analysis.questions || [],
           strategy: analysis.strategy || "",
-          processed: true
+          processed: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
 
         setProgress(Math.round(((i + 1) / files.length) * 100));

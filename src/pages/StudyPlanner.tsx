@@ -151,18 +151,24 @@ export default function StudyPlanner() {
           title: newTitle,
           dayOfWeek: newDay,
           startTime: newStartTime,
-          endTime: newEndTime
+          endTime: newEndTime,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
       } else if (modalType === 'goal') {
         await addDoc(collection(db, 'users', user.uid, 'planner_goals'), {
           text: newTitle,
           completed: false,
-          date: new Date().toISOString().split('T')[0]
+          date: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
       } else if (modalType === 'exam') {
         await addDoc(collection(db, 'users', user.uid, 'planner_exams'), {
           subject: newTitle,
-          date: newDate
+          date: newDate,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
       } else if (modalType === 'task') {
         await addDoc(collection(db, 'users', user.uid, 'tasks'), {
@@ -170,7 +176,9 @@ export default function StudyPlanner() {
           dueDate: newDate,
           priority: newPriority,
           completed: false,
-          userId: user.uid
+          userId: user.uid,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
       }
       setIsAddModalOpen(false);
@@ -183,14 +191,16 @@ export default function StudyPlanner() {
   const toggleGoal = async (id: string, current: boolean) => {
     if (!user) return;
     await updateDoc(doc(db, 'users', user.uid, 'planner_goals', id), {
-      completed: !current
+      completed: !current,
+      updatedAt: new Date().toISOString()
     });
   };
 
   const toggleTask = async (id: string, current: boolean) => {
     if (!user) return;
     await updateDoc(doc(db, 'users', user.uid, 'tasks', id), {
-      completed: !current
+      completed: !current,
+      updatedAt: new Date().toISOString()
     });
   };
 

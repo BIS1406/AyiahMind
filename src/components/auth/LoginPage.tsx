@@ -5,6 +5,7 @@ import { auth, googleProvider, db } from '../../lib/firebase';
 import { Mail, Lock, LogIn, Chrome, ArrowRight, Github } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../../lib/firestoreUtils';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -40,17 +41,21 @@ export default function LoginPage() {
       
       if (!userDoc.exists()) {
         console.log("Creating new user profile...");
-        await setDoc(userRef, {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          tier: 'free',
-          studyStreak: 0,
-          quizAverage: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        try {
+          await setDoc(userRef, {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            tier: 'free',
+            studyStreak: 0,
+            quizAverage: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, userPath);
+        }
       }
       
       navigate('/');
