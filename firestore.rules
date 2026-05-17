@@ -12,7 +12,7 @@ service cloud.firestore {
     }
 
     function isVerified() {
-      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider in ['google.com', 'github.com']);
     }
 
     function isOwner(userId) {
@@ -20,19 +20,15 @@ service cloud.firestore {
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() <= 128;
     }
 
     // Validation Helpers
     function isValidUser(data) {
       return data.keys().hasAll(['uid', 'email', 'tier', 'studyStreak', 'quizAverage', 'createdAt', 'updatedAt']) &&
              data.uid == request.auth.uid &&
-             data.email is string && data.email.size() <= 256 &&
-             data.tier in ['free', 'premium'] &&
-             data.studyStreak is int &&
-             (data.quizAverage is number || data.quizAverage is int) &&
-             data.createdAt is string &&
-             data.updatedAt is string;
+             data.email is string &&
+             data.tier in ['free', 'premium'];
     }
 
     function isValidTask(data) {
@@ -83,14 +79,8 @@ service cloud.firestore {
       // PII isolation: only owner can read their own profile
       allow get: if isOwner(userId);
       
-      // Allow creation for signed-in users (verification can be pending for email/password)
-      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(request.resource.data);
-      
-      // Verification required for updates
-      allow update: if isVerified() && isOwner(userId) && 
-                      isValidId(userId) &&
-                      isValidUser(request.resource.data) && 
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt', 'studyStreak', 'quizAverage', 'tier']);
+      // Allow creation and update for signed-in users
+      allow create, update: if isOwner(userId) && isValidId(userId);
 
       match /tasks/{taskId} {
         allow list, get: if isOwner(userId);

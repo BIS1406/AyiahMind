@@ -27,17 +27,18 @@ export default function SignupPage() {
       
       // Save initial user profile to Firestore
       const userPath = `users/${user.uid}`;
+      const now = new Date().toISOString();
       try {
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
-          email: user.email,
+          email: user.email || '',
           displayName: name,
           photoURL: null,
           tier: 'free',
           studyStreak: 0,
           quizAverage: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt: now,
+          updatedAt: now
         });
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, userPath);
@@ -70,7 +71,7 @@ export default function SignupPage() {
         try {
           await setDoc(userRef, {
             uid: user.uid,
-            email: user.email,
+            email: user.email || '',
             displayName: user.displayName || null,
             photoURL: user.photoURL || null,
             tier: 'free',

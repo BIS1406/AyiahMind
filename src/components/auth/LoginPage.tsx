@@ -42,17 +42,18 @@ export default function LoginPage() {
       if (!userDoc.exists()) {
         console.log("Creating new user profile...");
         const userPath = `users/${user.uid}`;
+        const now = new Date().toISOString();
         try {
           await setDoc(userRef, {
             uid: user.uid,
-            email: user.email,
+            email: user.email || '',
             displayName: user.displayName || null,
             photoURL: user.photoURL || null,
             tier: 'free',
             studyStreak: 0,
             quizAverage: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            createdAt: now,
+            updatedAt: now
           });
         } catch (err) {
           handleFirestoreError(err, OperationType.CREATE, userPath);
