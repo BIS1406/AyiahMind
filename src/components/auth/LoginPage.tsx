@@ -41,12 +41,13 @@ export default function LoginPage() {
       
       if (!userDoc.exists()) {
         console.log("Creating new user profile...");
+        const userPath = `users/${user.uid}`;
         try {
           await setDoc(userRef, {
             uid: user.uid,
             email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
+            displayName: user.displayName || null,
+            photoURL: user.photoURL || null,
             tier: 'free',
             studyStreak: 0,
             quizAverage: 0,

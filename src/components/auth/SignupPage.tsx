@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
 import { auth, googleProvider, db } from '../../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Mail, Lock, User, UserPlus, Chrome, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { handleFirestoreError, OperationType } from '../../lib/firestoreUtils';
@@ -54,28 +54,45 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     setError('');
     console.log("Starting Google Signup...");
-    const userPath = `users/unknown`;
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       console.log("Google Auth Success:", user.email);
       
-      // Save/Update user profile
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
       const signupUserPath = `users/${user.uid}`;
-      try {
-        await setDoc(doc(db, 'users', user.uid), {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          tier: 'free',
-          studyStreak: 0,
-          quizAverage: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, signupUserPath);
+      const now = new Date().toISOString();
+      
+      if (!userDoc.exists()) {
+        console.log("Creating new user profile...");
+        try {
+          await setDoc(userRef, {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || null,
+            photoURL: user.photoURL || null,
+            tier: 'free',
+            studyStreak: 0,
+            quizAverage: 0,
+            createdAt: now,
+            updatedAt: now
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, signupUserPath);
+        }
+      } else {
+        console.log("Updating existing user profile...");
+        try {
+          await setDoc(userRef, {
+            displayName: user.displayName || userDoc.data()?.displayName || null,
+            photoURL: user.photoURL || userDoc.data()?.photoURL || null,
+            updatedAt: now
+          }, { merge: true });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, signupUserPath);
+        }
       }
 
       navigate('/');

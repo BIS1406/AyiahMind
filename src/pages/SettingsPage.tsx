@@ -20,12 +20,17 @@ import {
   ChevronRight,
   CheckCircle2,
   AlertCircle,
-  Crown
+  Crown,
+  Loader2
 } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import MobileNav from '../components/layout/MobileNav';
 import { useTheme, ColorTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { handleFirestoreError, OperationType } from '../lib/firestoreUtils';
 
 const SettingsSection = ({ title, description, icon: Icon, children }: { title: string, description: string, icon: any, children: React.ReactNode }) => (
   <motion.section 
@@ -68,6 +73,29 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('appearance');
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleUpdateName = async () => {
+    if (!user || !displayName.trim()) return;
+    setIsSavingName(true);
+    setSaveStatus('idle');
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        displayName: displayName,
+        updatedAt: new Date().toISOString()
+      });
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (err) {
+      console.error(err);
+      setSaveStatus('error');
+      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   const handleClearCache = async () => {
     setIsClearing(true);
@@ -217,12 +245,22 @@ export default function SettingsPage() {
               label="Display Identity" 
               description="The name visible across your research reports and synthesis logs."
             >
-              <input 
-                type="text" 
-                defaultValue={user?.displayName || ''} 
-                className="bg-surface border border-theme rounded-xl px-4 py-2 text-sm text-primary focus:border-primary outline-none transition-all w-full sm:w-64"
-                placeholder="Enter display name"
-              />
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={displayName} 
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="bg-surface border border-theme rounded-xl px-4 py-2 text-sm text-primary focus:border-primary outline-none transition-all w-full sm:w-64"
+                  placeholder="Enter display name"
+                />
+                <button 
+                  onClick={handleUpdateName}
+                  disabled={isSavingName || displayName === user?.displayName}
+                  className="px-4 py-2 glass rounded-xl text-[10px] font-black uppercase tracking-widest text-primary border border-theme hover:bg-surface disabled:opacity-50 transition-all flex items-center gap-2"
+                >
+                  {isSavingName ? <Loader2 className="w-3 h-3 animate-spin" /> : (saveStatus === 'success' ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : 'Save')}
+                </button>
+              </div>
             </SettingItem>
           </SettingsSection>
 
