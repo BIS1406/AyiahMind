@@ -28,20 +28,26 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
+    console.log("Starting Google Login...");
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
+      console.log("Google Auth Success:", user.email);
       
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
+        console.log("Creating new user profile...");
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
           tier: 'free',
+          studyStreak: 0,
+          quizAverage: 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
@@ -49,7 +55,12 @@ export default function LoginPage() {
       
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to login with Google');
+      console.error("Google Login Error:", err);
+      setError(
+        err.code === 'auth/popup-blocked' 
+          ? 'Popup blocked! Please allow popups for this site or open in a new tab.' 
+          : err.message || 'Failed to login with Google'
+      );
     }
   };
 
@@ -70,6 +81,9 @@ export default function LoginPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-4 rounded-xl mb-6">
             {error}
+            <div className="mt-2 text-white/40">
+              Note: If Google login fails, try <a href={window.location.href} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">opening the app in a new tab</a>.
+            </div>
           </div>
         )}
 

@@ -44,9 +44,12 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = async () => {
+    setError('');
+    console.log("Starting Google Signup...");
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
+      console.log("Google Auth Success:", user.email);
       
       // Save/Update user profile
       await setDoc(doc(db, 'users', user.uid), {
@@ -55,13 +58,20 @@ export default function SignupPage() {
         displayName: user.displayName,
         photoURL: user.photoURL,
         tier: 'free',
+        studyStreak: 0,
+        quizAverage: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to signup with Google');
+      console.error("Google Signup Error:", err);
+      setError(
+        err.code === 'auth/popup-blocked' 
+          ? 'Popup blocked! Please allow popups for this site or open in a new tab.' 
+          : err.message || 'Failed to signup with Google'
+      );
     }
   };
 
@@ -82,6 +92,9 @@ export default function SignupPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-4 rounded-xl mb-6">
             {error}
+            <div className="mt-2 text-white/40">
+              Note: If Google login fails, try <a href={window.location.href} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">opening the app in a new tab</a>.
+            </div>
           </div>
         )}
 
